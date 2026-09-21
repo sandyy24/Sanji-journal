@@ -1,0 +1,416 @@
+<title>Rewire Book</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Patrick+Hand&family=Nunito:wght@400;600;700&display=swap">
+<style>
+  :root{
+    --leather:#8f5b3b; --leather-dk:#5c3821; --leather-lt:#b47a52;
+    --paper:#f7e8c9; --paper-dk:#efd9b1; --grid:#e6cfa6; --line:#d9bd8c;
+    --ink:#4b2f21; --ink-soft:#7a5b47;
+    --rust:#c9553c; --mustard:#e4a62e; --olive:#7f9c4b; --teal:#3f8f95; --peach:#f2b58f;
+    --cream:#fbf3e3; --shadow:rgba(60,30,10,.28);
+    --ground:#efd8bd;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--ground);
+    background-image:radial-gradient(circle at 20% 10%, #f7e3c9 0, transparent 45%),
+                     radial-gradient(circle at 85% 90%, #e5c39c 0, transparent 40%);
+    color:var(--ink); font-family:"Nunito",system-ui,sans-serif; font-size:15px;
+    padding-block:24px; padding-inline:16px;
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+  }
+  button{font:inherit; cursor:pointer}
+  button:focus-visible, textarea:focus-visible, input:focus-visible{outline:3px solid var(--teal); outline-offset:2px}
+
+  /* ---------- binder ---------- */
+  .binder{
+    position:relative; width:100%; max-width:980px;
+    background:var(--leather);
+    background-image:linear-gradient(135deg, rgba(255,255,255,.08), rgba(0,0,0,.12));
+    border-radius:26px; padding:26px 44px 26px 22px;
+    box-shadow:0 22px 50px -18px var(--shadow), inset 0 0 0 3px var(--leather-dk), inset 0 0 0 5px var(--leather-lt);
+  }
+  .binder::before{ /* stitching */
+    content:""; position:absolute; inset:10px; border:2px dashed rgba(255,230,190,.35); border-radius:18px; pointer-events:none;
+  }
+  .clasp{
+    position:absolute; left:-10px; top:50%; width:26px; height:64px; margin-top:-32px;
+    background:var(--leather-dk); border-radius:8px; box-shadow:inset 0 0 0 3px var(--leather-lt);
+  }
+  .clasp::after{content:""; position:absolute; left:8px; top:24px; width:10px; height:16px; border-radius:5px; background:#e9c98a}
+
+  /* tabs on the right edge */
+  .tabs{position:absolute; right:-2px; top:70px; display:flex; flex-direction:column; gap:14px; z-index:3}
+  .tab{
+    width:46px; height:44px; border:none; border-radius:0 12px 12px 0;
+    color:#fff; font-family:"Fredoka",sans-serif; font-weight:700; font-size:14px; letter-spacing:.04em;
+    box-shadow:2px 3px 0 rgba(0,0,0,.18); opacity:.55; transform:translateX(0); transition:transform .2s, opacity .2s;
+    padding:0; display:flex; align-items:center; justify-content:center;
+  }
+  .tab[aria-current="step"]{opacity:1; transform:translateX(8px)}
+  .tab.done{opacity:.9}
+  .tab.t1{background:var(--rust)} .tab.t2{background:var(--mustard)} .tab.t3{background:var(--olive)} .tab.t4{background:var(--teal)}
+
+  /* ---------- pages ---------- */
+  .spread{
+    position:relative; display:grid; grid-template-columns:1fr 1fr; gap:0;
+    background:var(--paper);
+    background-image:linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:22px 22px;
+    border-radius:14px; min-height:520px;
+    box-shadow:inset 0 0 40px rgba(120,80,40,.12), 0 2px 0 #e2c89f;
+    overflow:hidden;
+  }
+  .spread::before{ /* ring binding */
+    content:""; position:absolute; left:50%; top:0; bottom:0; width:34px; margin-left:-17px;
+    background:
+      radial-gradient(circle, var(--leather-dk) 0 5px, transparent 6px) center/34px 40px repeat-y,
+      linear-gradient(90deg, transparent 0 13px, rgba(0,0,0,.12) 13px 21px, transparent 21px);
+    z-index:2; pointer-events:none;
+  }
+  .spread::after{
+    content:""; position:absolute; left:50%; top:0; bottom:0; width:2px; margin-left:-1px;
+    background:linear-gradient(rgba(0,0,0,.18), rgba(0,0,0,.05), rgba(0,0,0,.18)); z-index:1; pointer-events:none;
+  }
+  .page{padding:34px 36px 30px; display:flex; flex-direction:column; gap:14px; min-width:0}
+  .page.left{padding-right:44px} .page.right{padding-left:44px}
+
+  h1,h2,h3{margin:0; font-family:"Fredoka",sans-serif; text-wrap:balance}
+  .hand{font-family:"Patrick Hand","Comic Sans MS",cursive}
+  .eyebrow{font-family:"Fredoka",sans-serif; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft)}
+
+  /* sticker title */
+  .sticker{
+    display:inline-block; padding:10px 18px; border-radius:16px; color:#fff;
+    font-family:"Fredoka",sans-serif; font-weight:700; font-size:26px; line-height:1.05; letter-spacing:.02em;
+    background:var(--rust); box-shadow:0 0 0 4px var(--cream), 0 4px 0 4px rgba(0,0,0,.15);
+    transform:rotate(-2deg); align-self:flex-start; text-transform:uppercase;
+  }
+  .sticker.mustard{background:var(--mustard)} .sticker.olive{background:var(--olive)} .sticker.teal{background:var(--teal)}
+
+  /* taped note */
+  .note{
+    position:relative; background:var(--cream); padding:16px 18px; border-radius:4px;
+    box-shadow:0 3px 8px rgba(60,30,10,.15); font-family:"Patrick Hand",cursive; font-size:19px; line-height:1.35;
+  }
+  .note::before{
+    content:""; position:absolute; top:-10px; left:50%; width:74px; height:20px; margin-left:-37px;
+    background:rgba(242,181,143,.75); transform:rotate(-2deg); box-shadow:0 1px 2px rgba(0,0,0,.1);
+  }
+  .note.tilt{transform:rotate(1deg)}
+  .note q{quotes:"“" "”"; font-style:italic}
+
+  .stamp{
+    align-self:flex-end; width:92px; height:92px; border-radius:50%; border:3px dashed var(--rust); color:var(--rust);
+    display:flex; align-items:center; justify-content:center; text-align:center; padding:8px;
+    font-family:"Fredoka",sans-serif; font-weight:700; font-size:11px; letter-spacing:.08em; text-transform:uppercase; line-height:1.15;
+    transform:rotate(12deg); opacity:.85; background:rgba(255,255,255,.25);
+  }
+
+  /* writing area */
+  textarea, input[type=text]{
+    width:100%; border:none; background:transparent; color:var(--ink); font-family:"Patrick Hand",cursive; font-size:20px; line-height:26px; resize:vertical;
+  }
+  .lined{
+    background:linear-gradient(transparent 25px, var(--line) 25px, var(--line) 26px, transparent 26px) 0 -4px/100% 26px repeat-y;
+    padding:0 4px; min-height:260px;
+  }
+  .lined textarea{min-height:260px; padding:0; display:block}
+  .field{
+    border-bottom:2px solid var(--ink-soft); padding:4px 6px; display:flex; align-items:baseline; gap:10px;
+  }
+  .field label{font-family:"Fredoka",sans-serif; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); white-space:nowrap}
+
+  .row{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:auto}
+  .btn{
+    border:none; border-radius:14px; padding:11px 18px; font-family:"Fredoka",sans-serif; font-weight:600; font-size:16px;
+    background:var(--ink); color:var(--cream); box-shadow:0 4px 0 rgba(0,0,0,.25); transition:transform .08s;
+  }
+  .btn:active{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.25)}
+  .btn.rust{background:var(--rust)} .btn.teal{background:var(--teal)} .btn.olive{background:var(--olive)}
+  .btn.ghost{background:transparent; color:var(--ink); box-shadow:none; text-decoration:underline; text-underline-offset:4px; padding-inline:6px}
+  .btn[disabled]{opacity:.45; cursor:not-allowed}
+
+  details.peek{font-size:14px}
+  details.peek summary{cursor:pointer; font-family:"Fredoka",sans-serif; color:var(--teal); font-weight:600; list-style:none}
+  details.peek summary::before{content:"✎ "}
+  details.peek .ex{margin-top:8px; padding:12px 14px; background:rgba(255,255,255,.45); border-left:4px solid var(--teal); border-radius:6px; font-family:"Patrick Hand",cursive; font-size:17px; line-height:1.35}
+
+  .hint{font-size:13px; color:var(--ink-soft)}
+  .count{font-size:12px; color:var(--ink-soft); text-align:right; font-variant-numeric:tabular-nums}
+
+  /* polaroids on the reveal page */
+  .polaroids{display:flex; flex-wrap:wrap; gap:22px; justify-content:center; align-items:flex-start}
+  .polaroid{
+    background:#fffaf0; padding:12px 12px 18px; border:none; border-radius:4px; width:190px;
+    box-shadow:0 6px 16px rgba(60,30,10,.22); text-align:left; color:var(--ink); transition:transform .15s;
+  }
+  .polaroid:hover{transform:rotate(0deg) scale(1.03)!important}
+  .polaroid .photo{
+    height:140px; border-radius:3px; display:flex; align-items:center; justify-content:center;
+    font-family:"Fredoka",sans-serif; font-weight:700; font-size:54px; color:#fff; text-shadow:0 3px 0 rgba(0,0,0,.18);
+  }
+  .polaroid .cap{font-family:"Patrick Hand",cursive; font-size:20px; margin-top:10px; display:flex; justify-content:space-between; align-items:baseline}
+  .polaroid .cap small{font-family:"Nunito",sans-serif; font-size:11px; color:var(--ink-soft)}
+  .polaroid.a{transform:rotate(-3deg)} .polaroid.a .photo{background:linear-gradient(135deg,var(--rust),var(--peach))}
+  .polaroid.b{transform:rotate(2.5deg)} .polaroid.b .photo{background:linear-gradient(135deg,var(--teal),var(--olive))}
+  .polaroid.empty .photo{background:repeating-linear-gradient(45deg,#e9dcc3 0 8px,#f3e9d6 8px 16px); color:var(--ink-soft); font-size:15px; text-shadow:none; padding:10px; text-align:center}
+
+  /* reading someone's answers */
+  .entry{display:flex; flex-direction:column; gap:10px}
+  .entry .q{font-family:"Fredoka",sans-serif; font-size:13px; letter-spacing:.1em; text-transform:uppercase; padding:4px 10px; border-radius:8px; color:#fff; align-self:flex-start}
+  .entry .a{font-family:"Patrick Hand",cursive; font-size:19px; line-height:1.35; white-space:pre-wrap; overflow-wrap:anywhere}
+  .entry .a:empty::before{content:"(left blank)"; color:var(--ink-soft)}
+
+  .code{
+    font-family:ui-monospace,Menlo,monospace; font-size:12px; word-break:break-all; background:rgba(255,255,255,.5);
+    padding:10px; border-radius:8px; max-height:110px; overflow:auto; border:1px dashed var(--ink-soft); user-select:all;
+  }
+  .toast{font-size:13px; color:var(--olive); font-weight:700; min-height:1.2em}
+
+  .foot{font-size:12px; color:var(--ink-soft); text-align:center; max-width:60ch}
+
+  @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+
+  @media (max-width:700px){
+    .binder{padding:18px 16px 18px 14px; border-radius:18px}
+    .clasp{display:none}
+    .tabs{position:static; flex-direction:row; justify-content:center; gap:8px; margin-bottom:12px}
+    .tab{width:52px; height:36px; border-radius:10px; transform:none!important}
+    .tab[aria-current="step"]{outline:3px solid var(--cream)}
+    .spread{grid-template-columns:1fr; min-height:0}
+    .spread::before,.spread::after{display:none}
+    .page,.page.left,.page.right{padding:22px 18px}
+    .page.left{border-bottom:2px dashed var(--line)}
+    .sticker{font-size:22px}
+  }
+</style>
+
+<div class="binder">
+  <div class="clasp" aria-hidden="true"></div>
+  <nav class="tabs" id="tabs" aria-label="Questions"></nav>
+  <div class="spread" id="spread"></div>
+</div>
+<p class="foot" id="foot"></p>
+
+<script>
+(function(){
+  const KEY = "rewire-book-v1";
+  const QUESTIONS = [
+    { n:"01", tag:"Proof", cls:"rust", color:"var(--rust)",
+      q:"What's one thing you're good at now that you were once bad at?",
+      sub:"And what did it feel like <em>while</em> you were bad at it?",
+      ex:"Cooking. For the first year I'd follow a recipe line by line and still end up with something bland or burnt, and I'd order in rather than try again. Now I cook most nights without measuring. While I was bad at it, it felt like a fixed trait — some people are “good in the kitchen” and I wasn't going to become one.",
+      stamp:"Species: already rewired once" },
+    { n:"02", tag:"The moment", cls:"mustard", color:"var(--mustard)",
+      q:"Think about a recent moment where things didn't go the way you wanted.",
+      sub:"What's the exact sentence in your head right after? Write it in quotes — the one you'd never say out loud.",
+      ex:"Halfway through a run, when I check my pace and it's slower than last week. The sentence is: “I'm not built for this. Other people just improve and I'm stuck.”",
+      stamp:"Handle with care" },
+    { n:"03", tag:"Rewrite", cls:"olive", color:"var(--olive)",
+      q:"Say that sentence again so it's still true but not a verdict.",
+      sub:"Then name the smallest possible rep you could do in the next two minutes.",
+      ex:"“Today's pace is one data point, and slow runs are still runs.” Smallest rep: stop looking at the watch and finish the next two minutes at whatever speed. Log the run when I'm home, including the time, without commentary.",
+      stamp:"What you practice is what you become" },
+    { n:"04", tag:"Each other", cls:"teal", color:"var(--teal)",
+      q:"When I'm in my moment…",
+      sub:"What I need from you is ___. What makes it worse is ___. What I'd want you to say to me, word for word, is: ___.",
+      ex:"When I'm in my moment, what I need from you is to ask how the run felt, not how fast it was. What makes it worse is when you pull up your own times or say “you're overthinking it.” What I'd want you to say, word for word: “You went. That's the whole job today.”",
+      stamp:"Read this one out loud" },
+  ];
+
+  // ---------- state ----------
+  let S = { screen:"cover", name:"", answers:["","","",""], step:0, sealed:false, sealedAt:null, partner:null, view:null };
+  try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch(e){}
+  if (S.sealed && S.partner) S.screen = "reveal";
+  else if (S.sealed) S.screen = "exchange";
+  else if (S.name) S.screen = "question";
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+
+  // ---------- helpers ----------
+  const spread = document.getElementById("spread");
+  const tabs = document.getElementById("tabs");
+  const foot = document.getElementById("foot");
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const encode = obj => "RB1-" + btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/=+$/,"");
+  const decode = str => {
+    const m = String(str).trim().match(/RB1-([A-Za-z0-9+/=]+)/); if (!m) return null;
+    try { const o = JSON.parse(decodeURIComponent(escape(atob(m[1])))); if (o && typeof o.name==="string" && Array.isArray(o.answers)) return o; } catch(e){}
+    return null;
+  };
+  const initial = n => (n||"?").trim().charAt(0).toUpperCase();
+  const fmtDate = iso => { try { return new Date(iso).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}); } catch(e){ return ""; } };
+
+  function renderTabs(){
+    const show = S.screen==="question";
+    tabs.hidden = !show;
+    if (!show) return;
+    tabs.innerHTML = QUESTIONS.map((q,i)=>`<button class="tab t${i+1} ${S.answers[i].trim()?'done':''}" ${i===S.step?'aria-current="step"':''} data-go="${i}" aria-label="Question ${q.n}: ${q.tag}">${q.n}</button>`).join("");
+    tabs.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>{ S.step=+b.dataset.go; save(); render(); }));
+  }
+
+  // ---------- screens ----------
+  function cover(){
+    spread.innerHTML = `
+      <section class="page left">
+        <span class="eyebrow">A two-person field notebook</span>
+        <h1 class="sticker">Rewire<br>Book</h1>
+        <div class="note tilt">
+          What you practice in the hard moment is what your brain becomes.<br><br>
+          Four questions, one at a time. Nobody sees anyone's answers until you've both sealed yours.
+        </div>
+        <div class="stamp">Neuro-<br>plasticity<br>in progress</div>
+      </section>
+      <section class="page right">
+        <span class="eyebrow">Sign the inside cover</span>
+        <div class="field"><label for="name">Name</label><input type="text" id="name" placeholder="who's writing tonight?" value="${esc(S.name)}" autocomplete="off" maxlength="30"></div>
+        <p class="hint">Write on your own device. When you're done you'll get a little code to send to each other — that's what unlocks the reveal.</p>
+        <div class="row"><button class="btn rust" id="start">Open the book →</button></div>
+      </section>`;
+    const inp = spread.querySelector("#name");
+    const go = ()=>{ const v=inp.value.trim(); if(!v){ inp.focus(); return; } S.name=v; S.screen="question"; S.step=0; save(); render(); };
+    spread.querySelector("#start").addEventListener("click", go);
+    inp.addEventListener("keydown", e=>{ if(e.key==="Enter") go(); });
+    foot.textContent = "";
+  }
+
+  function question(){
+    const i = S.step, q = QUESTIONS[i], last = i===QUESTIONS.length-1;
+    spread.innerHTML = `
+      <section class="page left">
+        <span class="eyebrow">Question ${q.n} of 04 · ${esc(S.name)}'s page</span>
+        <h2 class="sticker ${q.cls}">${esc(q.tag)}</h2>
+        <div class="note ${i%2?'tilt':''}"><strong>${esc(q.q)}</strong><br>${q.sub}</div>
+        <details class="peek"><summary>peek at an example</summary><div class="ex">${esc(q.ex)}</div></details>
+        <div class="stamp" style="border-color:${q.color};color:${q.color}">${esc(q.stamp)}</div>
+      </section>
+      <section class="page right">
+        <span class="eyebrow">Write it here</span>
+        <div class="lined"><textarea id="ans" aria-label="Your answer to question ${q.n}" placeholder="…">${esc(S.answers[i])}</textarea></div>
+        <div class="count" id="count"></div>
+        <div class="row">
+          <button class="btn ghost" id="back" ${i===0?'disabled':''}>← back</button>
+          <span style="flex:1"></span>
+          ${last ? `<button class="btn rust" id="seal">Seal my answers</button>` : `<button class="btn" id="next">Next page →</button>`}
+        </div>
+      </section>`;
+    const ta = spread.querySelector("#ans"), count = spread.querySelector("#count");
+    const upd = ()=>{ S.answers[i]=ta.value; count.textContent = ta.value.trim() ? `${ta.value.trim().split(/\s+/).length} words` : ""; };
+    upd();
+    let t; ta.addEventListener("input", ()=>{ upd(); clearTimeout(t); t=setTimeout(()=>{ save(); renderTabs(); }, 300); });
+    spread.querySelector("#back").addEventListener("click", ()=>{ S.step=i-1; save(); render(); });
+    const nx = spread.querySelector("#next"); if (nx) nx.addEventListener("click", ()=>{ S.step=i+1; save(); render(); });
+    const sl = spread.querySelector("#seal"); if (sl) sl.addEventListener("click", ()=>{
+      const blanks = S.answers.filter(a=>!a.trim()).length;
+      const row = sl.parentElement;
+      row.innerHTML = `<div class="note tilt" style="width:100%">${blanks ? `${blanks} question${blanks>1?"s are":" is"} still blank. ` : ""}Seal your answers? They can't be edited after this — that's the point.
+        <div class="row" style="margin-top:10px"><button class="btn ghost" id="sealno">not yet</button><span style="flex:1"></span><button class="btn rust" id="sealyes">Yes, seal it</button></div></div>`;
+      row.querySelector("#sealno").addEventListener("click", ()=>render());
+      row.querySelector("#sealyes").addEventListener("click", ()=>{ S.sealed = true; S.sealedAt = new Date().toISOString(); S.screen = "exchange"; save(); render(); });
+    });
+    foot.textContent = "Answers save on this device as you type.";
+    setTimeout(()=>ta.focus(), 50);
+  }
+
+  function exchange(){
+    const mine = encode({ name:S.name, answers:S.answers, sealedAt:S.sealedAt });
+    spread.innerHTML = `
+      <section class="page left">
+        <span class="eyebrow">Sealed · ${fmtDate(S.sealedAt)}</span>
+        <h2 class="sticker olive">Sealed ✓</h2>
+        <div class="note">Your pages are locked. Copy your code and send it to them — a text, the call chat, wherever you two are.</div>
+        <div class="code" id="mycode">${esc(mine)}</div>
+        <div class="row"><button class="btn olive" id="copy">Copy my code</button><span class="toast" id="toast"></span></div>
+      </section>
+      <section class="page right">
+        <span class="eyebrow">Their pages</span>
+        <div class="note tilt">Paste the code they send you. The moment it lands, the book opens for both of you.</div>
+        <div class="lined" style="min-height:120px"><textarea id="theirs" style="min-height:120px" aria-label="Partner's code" placeholder="paste their code here…"></textarea></div>
+        <p class="hint" id="err"></p>
+        <div class="row"><button class="btn teal" id="unlock">Open the book together →</button></div>
+      </section>`;
+    spread.querySelector("#copy").addEventListener("click", async ()=>{
+      const t = spread.querySelector("#toast");
+      try { await navigator.clipboard.writeText(mine); t.textContent="Copied — go send it."; }
+      catch(e){ const r=document.createRange(); r.selectNodeContents(spread.querySelector("#mycode")); getSelection().removeAllRanges(); getSelection().addRange(r); t.textContent="Selected — press copy."; }
+    });
+    spread.querySelector("#unlock").addEventListener("click", ()=>{
+      const p = decode(spread.querySelector("#theirs").value), err = spread.querySelector("#err");
+      if (!p){ err.textContent = "That doesn't look like a Rewire Book code — make sure the whole thing pasted, starting with RB1-."; return; }
+      if (p.name===S.name && p.answers.join()===S.answers.join()){ err.textContent = "That's your own code — you need theirs."; return; }
+      S.partner = { name:p.name, answers:p.answers.slice(0,4).map(a=>String(a||"")), sealedAt:p.sealedAt||null };
+      S.screen = "reveal"; S.view = null; save(); render();
+    });
+    foot.textContent = "Nothing leaves this page unless you send it. Your code is just your answers, folded up.";
+  }
+
+  function reveal(){
+    const people = [ {k:"me", cls:"a", name:S.name, answers:S.answers, at:S.sealedAt}, {k:"them", cls:"b", name:S.partner.name, answers:S.partner.answers, at:S.partner.sealedAt} ];
+    if (S.view){
+      const p = people.find(x=>x.k===S.view);
+      spread.innerHTML = `
+        <section class="page left">
+          <span class="eyebrow">${esc(p.name)}'s pages · sealed ${fmtDate(p.at)}</span>
+          <h2 class="sticker ${p.k==="me"?"rust":"teal"}">${esc(p.name)}</h2>
+          <div class="entry">
+            ${[0,1].map(i=>`<span class="q" style="background:${QUESTIONS[i].color}">${QUESTIONS[i].n} · ${esc(QUESTIONS[i].tag)}</span><div class="a">${esc(p.answers[i])}</div>`).join("")}
+          </div>
+        </section>
+        <section class="page right">
+          <span class="eyebrow">&nbsp;</span>
+          <div class="entry">
+            ${[2,3].map(i=>`<span class="q" style="background:${QUESTIONS[i].color}">${QUESTIONS[i].n} · ${esc(QUESTIONS[i].tag)}</span><div class="a">${esc(p.answers[i])}</div>`).join("")}
+          </div>
+          <div class="row">
+            <button class="btn ghost" id="back">← both pages</button>
+            <span style="flex:1"></span>
+            <button class="btn ${p.k==="me"?"teal":"rust"}" id="other">Read ${esc(people.find(x=>x.k!==S.view).name)}'s →</button>
+          </div>
+        </section>`;
+      spread.querySelector("#back").addEventListener("click", ()=>{ S.view=null; save(); render(); });
+      spread.querySelector("#other").addEventListener("click", ()=>{ S.view = S.view==="me"?"them":"me"; save(); render(); });
+      foot.textContent = "Open to this page when you're in it.";
+      return;
+    }
+    const both = encode({ book:true, me:people[0], them:people[1] });
+    spread.innerHTML = `
+      <section class="page left">
+        <span class="eyebrow">The book is open</span>
+        <h2 class="sticker teal">${esc(S.name)} &amp; ${esc(S.partner.name)}</h2>
+        <div class="note">Tap a photo to read their pages. These don't change now — they're the pages you come back to on the night you need them.</div>
+        <div class="stamp">Open<br>when<br>you're in it</div>
+      </section>
+      <section class="page right">
+        <div class="polaroids">
+          ${people.map(p=>`<button class="polaroid ${p.cls}" data-view="${p.k}"><div class="photo">${esc(initial(p.name))}</div><div class="cap"><span>${esc(p.name)}</span><small>${fmtDate(p.at)}</small></div></button>`).join("")}
+        </div>
+        <details class="peek" style="margin-top:auto"><summary>keep a backup of the whole book</summary>
+          <p class="hint">Paste this into your notes app. If either of you clears the browser, paste it on the cover page to get everything back.</p>
+          <div class="code" id="bookcode">${esc(both)}</div>
+          <div class="row" style="margin-top:8px"><button class="btn ghost" id="copyall">Copy backup</button><span class="toast" id="toast2"></span></div>
+        </details>
+      </section>`;
+    spread.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click", ()=>{ S.view=b.dataset.view; save(); render(); }));
+    spread.querySelector("#copyall").addEventListener("click", async ()=>{
+      const t = spread.querySelector("#toast2");
+      try { await navigator.clipboard.writeText(both); t.textContent="Copied."; } catch(e){ t.textContent="Select the text above and copy it."; }
+    });
+    foot.textContent = "";
+  }
+
+  // restore a full backup from the cover: paste the RB1 book code in the name field
+  function tryRestore(v){
+    const o = decode(v); if (!o || !o.book) return false;
+    S = Object.assign(S, { name:o.me.name, answers:o.me.answers, sealed:true, sealedAt:o.me.at, partner:{name:o.them.name, answers:o.them.answers, sealedAt:o.them.at}, screen:"reveal", view:null });
+    save(); render(); return true;
+  }
+
+  function render(){
+    renderTabs();
+    ({cover, question, exchange, reveal})[S.screen]();
+    if (S.screen==="cover"){ const inp = spread.querySelector("#name"); inp.addEventListener("paste", ()=>setTimeout(()=>{ if (tryRestore(inp.value)) return; }, 0)); }
+    window.scrollTo({top:0});
+  }
+  render();
+})();
+</script>
